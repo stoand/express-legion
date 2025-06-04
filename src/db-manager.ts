@@ -1,44 +1,75 @@
 import { join } from 'path';
-import { exists, mkdir, writeFile } from 'fs/promises';
-import { execSync } from 'child_process';
+import { exists, mkdir, writeFile, cp, rmdir } from 'fs/promises';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-const DEFAULT_LEGION_RUNTIME_DIR = 'legion_runtime';
+const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
 const DEFAULT_POSTGRES_DIR = '/lib/postgresql/16/bin/';
+const DEFAULT_POSTGRES_STARTING_PORT = 20100;
 
 const baseConfig = {
-  runtimeDir: DEFAULT_LEGION_RUNTIME_DIR,
+  tmpDir: DEFAULT_LEGION_TMP_DIR,
   postgresBinPath: DEFAULT_POSTGRES_DIR,
+  startingPort: DEFAULT_POSTGRES_STARTING_PORT,
+  instanceCount: 1,
 };
 
 const pgConfig = `
-    max_connections = 100
-    shared_buffers = 128MB
-`;
+max_connections = 100
+shared_buffers = 128MB
+unix_socket_directories = ''
+`.trim();
 
 export type SetupPostgresConfig = Partial<typeof baseConfig>;
 
 /// Creates the basis for postgres configuration that will be cloned
-export async function setupPostgresPrefab(partialConfig: SetupPostgresConfig) {
-
-  const config = Object.assign(baseConfig, partialConfig);
+export async function setupPostgresPrefab(config: typeof baseConfig) {
 
   if (!await exists(join(config.postgresBinPath, 'postgres'))) {
     throw new Error(`Invalid postgres bin directory "${config.postgresBinPath}"`);
   }
 
-  const fullRuntimePath = join(process.env.PWD || '', 'legion_runtime');
+  const fullRuntimePath = join(process.env.PWD || '', config.tmpDir);
   const fullPrefabPath = join(fullRuntimePath, 'db_prefab');
   const configPath = join(fullPrefabPath, 'postgresql.conf');
 
   if (!await exists(fullPrefabPath)) {
     await mkdir(fullRuntimePath, { recursive: true });
-    execSync(`${config.postgresBinPath}/initdb -D ${fullPrefabPath}`);
+    await promisify(exec)(`${config.postgresBinPath}/initdb -D ${fullPrefabPath}`);
     await writeFile(configPath, pgConfig, 'utf8');
   }
+}
+
+export async function allocatePostgresInstances(config: typeof baseConfig) {
+  const fullRuntimePath = join(process.env.PWD || '', config.tmpDir);
+  await mkdir(fullRuntimePath, { recursive: true });
+  const fullPrefabPath = join(fullRuntimePath, 'db_prefab');
+  const instancesPath = join(fullRuntimePath, 'db_instance');
+  await rmdir(instancesPath, { recursive: true });
+  await mkdir(instancesPath, { recursive: true });
+
+  for (let i = 0; i < config.instanceCount; i++) {
+    const instancePath = join(instancesPath, 'db' + i);
+
+    const run = async () => {
+      await cp(fullPrefabPath, instancePath, { recursive: true });
+    };
+    run();
+  }
+}
+
+export async function dbSetup(partialConfig: SetupPostgresConfig) {
+
+  const config = Object.assign(baseConfig, partialConfig);
+
+  await setupPostgresPrefab(config);
+  await allocatePostgresInstances(config);
 
   console.log('done');
 }
 
-setupPostgresPrefab({});
+dbSetup({
+  instanceCount: 1,
+});
 
-// allocatePostgresInstances();
+
