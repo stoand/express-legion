@@ -12,6 +12,13 @@
   "dependencies": {
     "@types/express": "^5.0.2",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "express-legion": "file:../../",
+    "nodemon": "^3.1.10"
+  },
+  "scripts": {
+    "start": "bun --watch ./run-app.ts",
+    "migrate": "bun --watch ./run-migrations.ts",
+    "test": "nodemon -e ts -x 'bun run ./run-tests.ts'"
   }
 }

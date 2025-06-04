@@ -7,7 +7,7 @@ const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
 const DEFAULT_POSTGRES_DIR = '/lib/postgresql/16/bin/';
 const DEFAULT_POSTGRES_STARTING_PORT = 20100;
 
-const baseConfig = {
+export const baseConfig = {
   tmpDir: DEFAULT_LEGION_TMP_DIR,
   postgresBinPath: DEFAULT_POSTGRES_DIR,
   startingPort: DEFAULT_POSTGRES_STARTING_PORT,
@@ -45,7 +45,11 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
   await mkdir(fullRuntimePath, { recursive: true });
   const fullPrefabPath = join(fullRuntimePath, 'db_prefab');
   const instancesPath = join(fullRuntimePath, 'db_instance');
-  await rmdir(instancesPath, { recursive: true });
+
+  if (await exists(instancesPath)) {
+    await rmdir(instancesPath, { recursive: true });
+  }
+
   await mkdir(instancesPath, { recursive: true });
   const newMode = 0o700;
 
@@ -63,19 +67,11 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
 }
 
 export async function dbSetup(partialConfig: SetupPostgresConfig) {
-
-  const config = Object.assign(baseConfig, partialConfig);
+  const config = Object.assign({}, baseConfig, partialConfig);
 
   await setupPostgresPrefab(config);
   await allocatePostgresInstances(config);
-  
-  console.log('done');
 
-  console.log('awaiting connections');
-  await new Promise(() => {});
+  await new Promise(resolve => setTimeout(() => resolve(null), 1000));
 }
-
-dbSetup({
-  instanceCount: 3,
-});
 
