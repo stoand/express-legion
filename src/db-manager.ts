@@ -76,6 +76,6 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
 }
 
 dbSetup({
-  instanceCount: 1,
+  instanceCount: 3,
 });
 
