@@ -1,9 +1,10 @@
 import * as dotenv from 'dotenv';
 import { sql } from 'bun';
 
-dotenv.config();
-
 export async function migrate() {
+
+  dotenv.config();
+
   await sql`DROP SCHEMA IF EXISTS public CASCADE;`;
   await sql`CREATE SCHEMA public;`;
 
@@ -13,7 +14,3 @@ export async function migrate() {
     email TEXT UNIQUE NOT NULL
   );`;
 }
-
-migrate();
-
-console.log('Ran migrations to create user table');
