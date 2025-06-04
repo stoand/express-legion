@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { exists, mkdir, writeFile, cp, rmdir } from 'fs/promises';
-import { exec } from 'child_process';
+import { exists, chmod, mkdir, writeFile, cp, rmdir } from 'fs/promises';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
@@ -47,12 +47,16 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
   const instancesPath = join(fullRuntimePath, 'db_instance');
   await rmdir(instancesPath, { recursive: true });
   await mkdir(instancesPath, { recursive: true });
+  const newMode = 0o700;
 
   for (let i = 0; i < config.instanceCount; i++) {
     const instancePath = join(instancesPath, 'db' + i);
 
     const run = async () => {
       await cp(fullPrefabPath, instancePath, { recursive: true });
+      await chmod(instancePath, newMode);
+      const port = config.startingPort + i;
+      spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
     };
     run();
   }
@@ -64,12 +68,14 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
 
   await setupPostgresPrefab(config);
   await allocatePostgresInstances(config);
-
+  
   console.log('done');
+
+  console.log('awaiting connections');
+  await new Promise(() => {});
 }
 
 dbSetup({
   instanceCount: 1,
 });
-
 
