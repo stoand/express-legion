@@ -1,9 +1,8 @@
 import { join } from 'path';
-import { exists, mkdir } from 'fs/promises';
+import { exists, mkdir, writeFile } from 'fs/promises';
 import { execSync } from 'child_process';
 
 const DEFAULT_LEGION_RUNTIME_DIR = 'legion_runtime';
-
 const DEFAULT_POSTGRES_DIR = '/lib/postgresql/16/bin/';
 
 const baseConfig = {
@@ -11,9 +10,15 @@ const baseConfig = {
   postgresBinPath: DEFAULT_POSTGRES_DIR,
 };
 
+const pgConfig = `
+    max_connections = 100
+    shared_buffers = 128MB
+`;
+
 export type SetupPostgresConfig = Partial<typeof baseConfig>;
 
-export async function setupPostgres(partialConfig: SetupPostgresConfig) {
+/// Creates the basis for postgres configuration that will be cloned
+export async function setupPostgresPrefab(partialConfig: SetupPostgresConfig) {
 
   const config = Object.assign(baseConfig, partialConfig);
 
@@ -23,13 +28,17 @@ export async function setupPostgres(partialConfig: SetupPostgresConfig) {
 
   const fullRuntimePath = join(process.env.PWD || '', 'legion_runtime');
   const fullPrefabPath = join(fullRuntimePath, 'db_prefab');
+  const configPath = join(fullPrefabPath, 'postgresql.conf');
 
   if (!await exists(fullPrefabPath)) {
     await mkdir(fullRuntimePath, { recursive: true });
     execSync(`${config.postgresBinPath}/initdb -D ${fullPrefabPath}`);
+    await writeFile(configPath, pgConfig, 'utf8');
   }
 
   console.log('done');
 }
 
-setupPostgres({});
+setupPostgresPrefab({});
+
+// allocatePostgresInstances();
