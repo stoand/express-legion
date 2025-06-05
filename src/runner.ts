@@ -1,5 +1,5 @@
 import { Worker } from 'worker_threads';
-import { type SetupPostgresConfig, baseConfig as basePostgresConfig, dbSetup } from './db-manager';
+import { type SetupPostgresConfig, baseConfig as basePostgresConfig, dbSetup, dbTeardown } from './db-manager';
 import { getTestPaths } from './test-manager';
 
 export type { SetupPostgresConfig } from './db-manager';
@@ -22,7 +22,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
   const files = await getTestPaths(testConfig.testDir);
 
   postgresConfig.instanceCount = files.length;
-  await dbSetup(postgresConfig);
+  const dbProcesses = await dbSetup(postgresConfig);
 
   console.log('awaiting onnections');
 
@@ -44,7 +44,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
         console.error(error);
       });
 
-      worker.on('exit', (code) => {
+      worker.on('exit', async (code) => {
         console.log('exit', code);
         if (code != 0) {
           failedTests += 1;
@@ -52,6 +52,8 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
         completedWorkers += 1;
         if (completedWorkers === files.length) {
           resolve(null);
+          await dbTeardown(dbProcesses);
+          new Promise(resolve => setTimeout(() => resolve(null), 200));
           console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded`);
         }
       });

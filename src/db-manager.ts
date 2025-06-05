@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { exists, chmod, mkdir, writeFile, cp, rmdir } from 'fs/promises';
-import { exec, spawn } from 'child_process';
+import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
@@ -53,6 +53,8 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
   await mkdir(instancesPath, { recursive: true });
   const newMode = 0o700;
 
+  let processes: ChildProcessWithoutNullStreams[] = [];
+
   for (let i = 0; i < config.instanceCount; i++) {
     const instancePath = join(instancesPath, 'db' + i);
 
@@ -61,13 +63,26 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
       await chmod(instancePath, newMode);
       const port = config.startingPort + i;
       const proc = spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
-      proc.stdout.pipe(process.stdout);
-      proc.stderr.pipe(process.stderr);
-      proc.on('exit', (code) => {
-        console.log('DB EXIT', code);
-      });
+
+      if (process.env.VERBOSE) {
+        proc.stdout.pipe(process.stdout);
+        proc.stderr.pipe(process.stderr);
+
+        proc.on('exit', (code) => {
+          console.log('DB EXIT', code);
+        });
+      }
+      processes.push(proc);
     };
     run();
+  }
+
+  return processes;
+}
+
+export async function dbTeardown(processes: ChildProcessWithoutNullStreams[]) {
+  for (const proc of processes) {
+    proc.kill();
   }
 }
 
@@ -75,8 +90,10 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
   const config = Object.assign({}, baseConfig, partialConfig);
 
   await setupPostgresPrefab(config);
-  await allocatePostgresInstances(config);
+  const processes = await allocatePostgresInstances(config);
 
   await new Promise(resolve => setTimeout(() => resolve(null), 500));
+
+  return processes;
 }
 
