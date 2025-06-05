@@ -55,9 +55,8 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
         if (completedWorkers === files.length) {
           resolve(null);
           const endTime = Date.now();
-          await dbTeardown(dbProcesses);
-          new Promise(resolve => setTimeout(() => resolve(null), 200));
           console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded in ${endTime - startTime}ms`);
+          await dbTeardown(dbProcesses);
           process.exit(failedTests > 0 ? 1 : 0);
         }
       });

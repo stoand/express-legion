@@ -81,9 +81,17 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
 }
 
 export async function dbTeardown(processes: ChildProcessWithoutNullStreams[]) {
+  
+  let exitPromises: Promise<void>[] = [];
+
   for (const proc of processes) {
     proc.kill();
+    exitPromises.push(new Promise(resolve => proc.on('exit', (_code) => {
+      resolve();
+    })));
   }
+
+  await Promise.all(exitPromises);
 }
 
 export async function dbSetup(partialConfig: SetupPostgresConfig) {
