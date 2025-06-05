@@ -1,7 +1,7 @@
 import { Worker } from 'worker_threads';
 import { type SetupPostgresConfig, baseConfig as basePostgresConfig, dbSetup, dbTeardown } from './db-manager';
 import { getTestPaths } from './test-manager';
-import { watch } from 'fs';
+import chokidar from 'chokidar';
 import { join } from 'path';
 
 export type { SetupPostgresConfig } from './db-manager';
@@ -17,30 +17,53 @@ const baseConfig = {
 };
 
 let initedWatcher = false;
+let running = false;
 let runAgainAsSoonAsPossible = false;
 
 export type TestConfig = Partial<typeof baseConfig>;
 
-export function initWatcher(watchDir: string) {
+export function initWatcher(watchDir: string, onFileChange: any) {
+  initedWatcher = true;
+
   const fullWatchDir = join(process.cwd(), watchDir);
   console.log('watching dir', fullWatchDir);
-    watch(fullWatchDir, (_event, filename) => {
-      if (filename && filename.endsWith('.ts')) {
-        runAgainAsSoonAsPossible = true;
-        console.log('run asap')
-      }
-    });
+
+  const watcher = chokidar.watch(fullWatchDir, {
+    ignored: /(^|[\/\\])\../, // ignore dotfiles
+    persistent: true,
+    ignoreInitial: true,
+    depth: 99 // Set a reasonable depth for recursion
+  });
+
+  // watcher.on('add', onFileChange);
+  // watcher.on('unlink', onFileChange);
+  // watcher.on('change', onFileChange);
 }
 
 export async function runTests(partialTestConfig: TestConfig, partialPostgresConfig: SetupPostgresConfig) {
+
+  running = true;
 
   const startTime = Date.now();
 
   const testConfig = Object.assign({}, baseConfig, partialTestConfig);
   const postgresConfig = Object.assign({}, basePostgresConfig, partialPostgresConfig);
-  
+
+  const onFileChange = (_event, filename) => {
+    return;
+    // console.log('filename', filename);
+    if (filename && typeof filename === 'string' && filename.endsWith('.ts')) {
+      console.log('change is good', filename);
+      if (running) {
+        runAgainAsSoonAsPossible = true;
+      } else {
+        runTests(testConfig, postgresConfig);
+      }
+    }
+  }
+
   if (!initedWatcher && testConfig && testConfig.watchDir) {
-    initWatcher(testConfig.watchDir);
+    initWatcher(testConfig.watchDir, onFileChange);
   }
 
   const files = await getTestPaths(testConfig.testDir);
@@ -80,7 +103,11 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
           console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded in ${endTime - startTime}ms`);
           await dbTeardown(dbProcesses);
           if (testConfig.watchDir) {
-            
+            running = false;
+            if (runAgainAsSoonAsPossible) {
+              runAgainAsSoonAsPossible = false;
+              onFileChange();
+            }
           } else {
             process.exit(failedTests > 0 ? 1 : 0);
           }
