@@ -63,6 +63,9 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
       const proc = spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
       proc.stdout.pipe(process.stdout);
       proc.stderr.pipe(process.stderr);
+      proc.on('exit', (code) => {
+        console.log('DB EXIT', code);
+      });
     };
     run();
   }
@@ -74,6 +77,6 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
   await setupPostgresPrefab(config);
   await allocatePostgresInstances(config);
 
-  await new Promise(resolve => setTimeout(() => resolve(null), 200));
+  await new Promise(resolve => setTimeout(() => resolve(null), 500));
 }
 

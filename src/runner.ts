@@ -24,7 +24,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
   postgresConfig.instanceCount = files.length;
   await dbSetup(postgresConfig);
 
-  console.log('awaiting connections');
+  console.log('awaiting onnections');
 
   await new Promise(async resolve => {
 
@@ -45,6 +45,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
       });
 
       worker.on('exit', (code) => {
+        console.log('exit', code);
         if (code != 0) {
           failedTests += 1;
         }
