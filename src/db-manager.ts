@@ -60,7 +60,9 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
       await cp(fullPrefabPath, instancePath, { recursive: true });
       await chmod(instancePath, newMode);
       const port = config.startingPort + i;
-      spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
+      const proc = spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
+      proc.stdout.pipe(process.stdout);
+      proc.stderr.pipe(process.stderr);
     };
     run();
   }
@@ -72,6 +74,6 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
   await setupPostgresPrefab(config);
   await allocatePostgresInstances(config);
 
-  await new Promise(resolve => setTimeout(() => resolve(null), 1000));
+  await new Promise(resolve => setTimeout(() => resolve(null), 200));
 }
 

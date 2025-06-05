@@ -1,11 +1,9 @@
-import { getTestPaths } from './test-manager';
-import { type SetupPostgresConfig, dbSetup, baseConfig as basePostgresConfig } from './db-manager';
-import { join } from 'path';
-import { readdir } from 'fs/promises';
 import { Worker } from 'worker_threads';
+import { type SetupPostgresConfig, baseConfig as basePostgresConfig, dbSetup } from './db-manager';
+import { getTestPaths } from './test-manager';
 
-export { getTestPaths } from './test-manager';
 export type { SetupPostgresConfig } from './db-manager';
+export { getTestPaths } from './test-manager';
 
 const DEFAULT_TEST_DIR = 'integration';
 const DEFAULT_BUILD_DIR = 'legion_out';
@@ -19,7 +17,7 @@ export type TestConfig = Partial<typeof baseConfig>;
 
 export async function runTests(partialTestConfig: TestConfig, partialPostgresConfig: SetupPostgresConfig) {
   const testConfig = Object.assign({}, baseConfig, partialTestConfig);
-  const postgresConfig = Object.assign({}, basePostgresConfig, partialTestConfig);
+  const postgresConfig = Object.assign({}, basePostgresConfig, partialPostgresConfig);
 
   const files = await getTestPaths(testConfig.testDir);
 
@@ -28,7 +26,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
 
   console.log('awaiting connections');
 
-  await new Promise(resolve => {
+  await new Promise(async resolve => {
 
     let completedWorkers = 0;
     let failedTests = 0;
@@ -36,10 +34,10 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const worker = new Worker(file, {
-        env: {
-          POSTGRES_URL:
-            `postgresql://andreas@127.0.0.1:${(postgresConfig.startingPort || 0) + i}/postgres`
-        }
+        workerData: {
+          postgresUrl:
+            `postgresql://${process.env.USER}@127.0.0.1:${(postgresConfig.startingPort || 0) + i}/postgres`
+        },
       });
 
       worker.on('error', (error) => {
