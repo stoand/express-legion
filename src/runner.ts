@@ -40,12 +40,15 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
         },
       });
 
+      let foundError = false;
+
       worker.on('error', (error) => {
         console.error(error);
+        foundError = true;
       });
 
       worker.on('exit', async (code) => {
-        if (code != 0) {
+        if (code != 0 || foundError) {
           failedTests += 1;
         }
         completedWorkers += 1;
@@ -55,6 +58,7 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
           await dbTeardown(dbProcesses);
           new Promise(resolve => setTimeout(() => resolve(null), 200));
           console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded in ${endTime - startTime}ms`);
+          process.exit(failedTests > 0 ? 1 : 0);
         }
       });
     }
