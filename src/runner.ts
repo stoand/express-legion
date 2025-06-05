@@ -16,6 +16,8 @@ const baseConfig = {
 export type TestConfig = Partial<typeof baseConfig>;
 
 export async function runTests(partialTestConfig: TestConfig, partialPostgresConfig: SetupPostgresConfig) {
+  const startTime = Date.now();
+
   const testConfig = Object.assign({}, baseConfig, partialTestConfig);
   const postgresConfig = Object.assign({}, basePostgresConfig, partialPostgresConfig);
 
@@ -23,8 +25,6 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
 
   postgresConfig.instanceCount = files.length;
   const dbProcesses = await dbSetup(postgresConfig);
-
-  console.log('awaiting onnections');
 
   await new Promise(async resolve => {
 
@@ -45,16 +45,16 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
       });
 
       worker.on('exit', async (code) => {
-        console.log('exit', code);
         if (code != 0) {
           failedTests += 1;
         }
         completedWorkers += 1;
         if (completedWorkers === files.length) {
           resolve(null);
+          const endTime = Date.now();
           await dbTeardown(dbProcesses);
           new Promise(resolve => setTimeout(() => resolve(null), 200));
-          console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded`);
+          console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded in ${endTime - startTime}ms`);
         }
       });
     }
