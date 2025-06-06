@@ -11,9 +11,6 @@
     "typescript": "^5"
   },
   "scripts": {
-    "build": "bun build src/runner.ts --outdir=out"
-  },
-  "dependencies": {
-    "chokidar": "^4.0.3"
+      "build": "bun build src/runner.ts --outdir=out"
   }
 }
