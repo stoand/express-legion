@@ -1,17 +1,15 @@
 import { Worker } from 'worker_threads';
 import { type SetupPostgresConfig, baseConfig as basePostgresConfig, dbSetup, dbTeardown } from './db-manager';
 import { getTestPaths } from './test-manager';
-import { ChildProcessWithoutNullStreams } from 'child_process';
+import { type ChildProcessWithoutNullStreams } from 'child_process';
 
 export type { SetupPostgresConfig } from './db-manager';
 export { getTestPaths } from './test-manager';
 
 const DEFAULT_TEST_DIR = 'integration';
-const DEFAULT_BUILD_DIR = 'legion_out';
 
 const baseConfig = {
   testDir: DEFAULT_TEST_DIR,
-  buildDir: DEFAULT_BUILD_DIR,
 };
 
 export type TestConfig = Partial<typeof baseConfig>;
@@ -51,10 +49,19 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (!file) {
+        throw new Error('No file found');
+      }
+
+      const postgresUrl = `postgresql://${process.env.USER}@127.0.0.1:${(postgresConfig.startingPort || 0) + i}/postgres`
+
       const worker = new Worker(file, {
+        env: {
+          LEGION_POSTGRES_URL: postgresUrl
+        },
         workerData: {
-          postgresUrl:
-            `postgresql://${process.env.USER}@127.0.0.1:${(postgresConfig.startingPort || 0) + i}/postgres`
+          postgresUrl
+            
         },
       });
 

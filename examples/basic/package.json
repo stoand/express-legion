@@ -13,8 +13,9 @@
     "@types/express": "^5.0.2",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "express-legion": "file:../../",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.0",
+    "test-legion": "file:../../"
   },
   "scripts": {
     "start": "bun --watch ./run-app.ts",

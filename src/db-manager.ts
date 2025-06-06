@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { exists, chmod, mkdir, writeFile, cp, rmdir } from 'fs/promises';
-import { ChildProcessWithoutNullStreams, exec, spawn } from 'child_process';
+import { type ChildProcessWithoutNullStreams, exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
@@ -20,7 +20,7 @@ shared_buffers = 128MB
 unix_socket_directories = ''
 `.trim();
 
-export type SetupPostgresConfig = Partial<typeof baseConfig>;
+export type SetupPostgresConfig = Exclude<Partial<typeof baseConfig>, 'instanceCount'>;
 
 /// Creates the basis for postgres configuration that will be cloned
 export async function setupPostgresPrefab(config: typeof baseConfig) {
@@ -99,8 +99,6 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
 
   await setupPostgresPrefab(config);
   const processes = await allocatePostgresInstances(config);
-
-  // await new Promise(resolve => setTimeout(() => resolve(null), 500));
 
   return processes;
 }
