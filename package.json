@@ -1,5 +1,5 @@
 {
-  "name": "express-legion",
+  "name": "test-legion",
   "module": "src/runner.ts",
   "type": "module",
   "private": false,

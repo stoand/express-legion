@@ -1,6 +1,8 @@
-# Express-Legion
+# Test-Legion
 
-Test your express (or express based) API in parallel with a _legion_ of workers.
+Run Typescript/Javascript Tests in Parallel.
+
+Based on Bun.
 
 Every test is completely isolated - even having its own DB instance.
 
@@ -13,7 +15,3 @@ Every test is completely isolated - even having its own DB instance.
 or
 
 `psql "postgresql://127.0.0.1:20102/postgres"`
-
-## Coming Soon (maybe)
-
-Express Legion Cloud CI
