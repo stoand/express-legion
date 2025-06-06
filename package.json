@@ -2,7 +2,7 @@
   "name": "test-legion",
   "module": "src/runner.ts",
   "main": "src/runner.js",
-  "type": "module", 
+  "type": "module",
   "private": false,
   "devDependencies": {
     "@types/bun": "latest"

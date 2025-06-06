@@ -100,6 +100,9 @@ export async function dbSetup(partialConfig: SetupPostgresConfig) {
   await setupPostgresPrefab(config);
   const processes = await allocatePostgresInstances(config);
 
+  // wait for the db to be ready
+  await new Promise(resolve => setTimeout(() => resolve(null), 500));
+
   return processes;
 }
 

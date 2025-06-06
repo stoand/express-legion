@@ -1,23 +1,22 @@
 import * as dotenv from 'dotenv';
-import { SQL } from 'bun';
+import { Pool } from 'pg';
 
 export async function migrate() {
-
   dotenv.config();
 
-  const sql = new SQL({
-    url: process.env.LEGION_POSTGRES_URL
+  const pool = new Pool({
+    connectionString: process.env.LEGION_POSTGRES_URL
   });
 
-  console.log('dropping schema');
+  await pool.query('DROP SCHEMA IF EXISTS public CASCADE');
+  await pool.query('CREATE SCHEMA public');
+  await pool.query(`
+    CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL
+    )
+  `);
 
-  await sql`DROP SCHEMA IF EXISTS public CASCADE;`;
-
-  await sql`CREATE SCHEMA public;`;
-
-  await sql`CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL
-  );`;
+  await pool.end();
 }
