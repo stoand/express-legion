@@ -1,0 +1,16 @@
+// tsconfig.json
+{
+    "compilerOptions": {
+      "target": "es2022",                // Or a newer ES version (e.g., "esnext")
+      "module": "node16",                // Or "esnext", "nodenext" for strict ESM output
+      "moduleResolution": "node16",      // Or "nodenext" for modern module resolution
+      "esModuleInterop": true,           // Recommended for better interop between CommonJS and ESM
+      "forceConsistentCasingInFileNames": true,
+      "strict": true,
+      "skipLibCheck": true,
+      "outDir": "./dist",
+      "rootDir": "./src"
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+  } 

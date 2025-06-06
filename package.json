@@ -1,16 +1,13 @@
 {
   "name": "test-legion",
   "module": "src/runner.ts",
-  "type": "module",
+  "main": "src/runner.js",
+  "type": "module", 
   "private": false,
-  "bin": "./out/runner.js",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "scripts": {
-      "build": "bun build src/runner.ts --outdir=out"
   }
 }
