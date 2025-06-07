@@ -62,7 +62,7 @@ export async function allocatePostgresInstances(config: typeof baseConfig) {
       await cp(fullPrefabPath, instancePath, { recursive: true });
       await chmod(instancePath, newMode);
       const port = config.startingPort + i;
-      const proc = spawn('/lib/postgresql/16/bin/postgres', ['-D', instancePath, '-c', 'port=' + port]);
+      const proc = spawn(join(config.postgresBinPath, '/postgres'), ['-D', instancePath, '-c', 'port=' + port]);
 
       if (process.env.VERBOSE) {
         proc.stdout.pipe(process.stdout);
