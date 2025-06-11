@@ -4,7 +4,14 @@ import { type ChildProcessWithoutNullStreams, exec, spawn } from 'child_process'
 import { promisify } from 'util';
 
 const DEFAULT_LEGION_TMP_DIR = 'tmp_legion';
-const DEFAULT_POSTGRES_DIR = '/lib/postgresql/16/bin/';
+
+let DEFAULT_POSTGRES_DIR = '/lib/postgresql/16/bin/';
+
+// mac default directory
+if (await exists('/opt/homebrew/opt/postgresql@16/bin/')) {
+  DEFAULT_POSTGRES_DIR = '/opt/homebrew/opt/postgresql@16/bin/';
+}
+
 const DEFAULT_POSTGRES_STARTING_PORT = 20100;
 
 export const baseConfig = {
