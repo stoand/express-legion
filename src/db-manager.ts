@@ -12,6 +12,10 @@ if (await exists('/opt/homebrew/opt/postgresql@16/bin/')) {
   DEFAULT_POSTGRES_DIR = '/opt/homebrew/opt/postgresql@16/bin/';
 }
 
+if (await exists('/lib/postgresql/15/bin/')) {
+  DEFAULT_POSTGRES_DIR = '/lib/postgresql/15/bin/';
+}
+
 const DEFAULT_POSTGRES_STARTING_PORT = 20100;
 
 export const baseConfig = {

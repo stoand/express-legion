@@ -17,12 +17,13 @@ export type TestConfig = Partial<typeof baseConfig>;
 export async function runTests(partialTestConfig: TestConfig, partialPostgresConfig: SetupPostgresConfig) {
   
   let dbProcesses: ChildProcessWithoutNullStreams[] | undefined = undefined;
+  let someTestsFailed = false;
 
   function gracefulShutdown() {
     if (dbProcesses) {
       dbTeardown(dbProcesses);
     }
-    process.exit(0);
+    process.exit(someTestsFailed ? 1 : 0);
   }
 
   process.on('SIGINT', gracefulShutdown);
@@ -80,9 +81,10 @@ export async function runTests(partialTestConfig: TestConfig, partialPostgresCon
         if (completedWorkers === files.length) {
           resolve(null);
           const endTime = Date.now();
+          someTestsFailed = failedTests > 0;
           console.log(`Tests done: ${files.length - failedTests} of ${files.length} succeeded in ${endTime - startTime}ms`);
           await dbTeardown(dbProcesses);
-          process.exit(failedTests > 0 ? 1 : 0);
+          process.exit(someTestsFailed ? 1 : 0);
         }
       });
     }
